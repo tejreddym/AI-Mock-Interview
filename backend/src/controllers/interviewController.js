@@ -108,6 +108,15 @@ export const submitAnswer = async (req, res) => {
     const { interviewId, questionIndex } = req.params;
     const { answer } = req.body;
 
+    // Validate questionIndex is a number
+    const index = parseInt(questionIndex, 10);
+    if (isNaN(index) || index < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid question index'
+      });
+    }
+
     const interview = await Interview.findById(interviewId);
 
     if (!interview) {
@@ -124,16 +133,16 @@ export const submitAnswer = async (req, res) => {
       });
     }
 
-    if (!interview.questions[questionIndex]) {
+    if (!interview.questions[index] || index >= interview.questions.length) {
       return res.status(404).json({
         success: false,
         message: 'Question not found'
       });
     }
 
-    // Update answer
-    interview.questions[questionIndex].answer = answer;
-    interview.questions[questionIndex].answeredAt = new Date();
+    // Update answer safely using validated index
+    interview.questions[index].answer = answer;
+    interview.questions[index].answeredAt = new Date();
 
     await interview.save();
 
@@ -154,6 +163,15 @@ export const evaluateAnswer = async (req, res) => {
   try {
     const { interviewId, questionIndex } = req.params;
 
+    // Validate questionIndex is a number
+    const index = parseInt(questionIndex, 10);
+    if (isNaN(index) || index < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid question index'
+      });
+    }
+
     const interview = await Interview.findById(interviewId);
 
     if (!interview) {
@@ -170,8 +188,8 @@ export const evaluateAnswer = async (req, res) => {
       });
     }
 
-    const question = interview.questions[questionIndex];
-    if (!question) {
+    const question = interview.questions[index];
+    if (!question || index >= interview.questions.length) {
       return res.status(404).json({
         success: false,
         message: 'Question not found'
@@ -221,17 +239,17 @@ Format your response as JSON:
       };
     }
 
-    // Update question with score and feedback
-    interview.questions[questionIndex].score = Math.min(Math.max(evaluation.score, 0), 10);
-    interview.questions[questionIndex].feedback = evaluation.feedback;
+    // Update question with score and feedback using validated index
+    interview.questions[index].score = Math.min(Math.max(evaluation.score, 0), 10);
+    interview.questions[index].feedback = evaluation.feedback;
 
     await interview.save();
 
     res.status(200).json({
       success: true,
       data: {
-        score: interview.questions[questionIndex].score,
-        feedback: interview.questions[questionIndex].feedback
+        score: interview.questions[index].score,
+        feedback: interview.questions[index].feedback
       }
     });
   } catch (error) {

@@ -10,11 +10,15 @@ import {
   getUserStats
 } from '../controllers/interviewController.js';
 import { protect } from '../middleware/auth.js';
+import { interviewLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 // Protect all routes
 router.use(protect);
+
+// Apply interview rate limiter to all routes
+router.use(interviewLimiter);
 
 router.get('/stats', getUserStats);
 router.get('/', getUserInterviews);
